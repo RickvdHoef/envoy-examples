@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mainapp-envoy-sidecar-deployment
+  labels:
+    app: mainapp-envoy-sidecar
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mainapp-envoy-sidecar
+  template:
+    metadata:
+      labels:
+        app: mainapp-envoy-sidecar
+    # The imp stuff
+    spec:
+      # Deployment has 2 containers!
+      containers:
+      - name: mainapp-envoy-sidecar
+        image: mainapp-envoy-sidecar:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5199
+          name: envoy-port
+        
+      - name: livescores-microsvc
+        image: livescores-microsvc:latest
+        imagePullPolicy: Never
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mainapp-envoy-sidecar-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: mainapp-envoy-sidecar
+  ports:
+  # Service only exposes the Envoy container
+  - name: mainapp-envoy-sidecar-svc-port
+    protocol: TCP
+    port: 5199
+    targetPort: envoy-port
